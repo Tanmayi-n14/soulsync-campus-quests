@@ -128,30 +128,73 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Map Initialization ---
 function initMap() {
   map = L.map('campus-map', {
-    zoomControl: false
+    zoomControl: false,
+    minZoom: 15,
+    maxZoom: 19
   }).setView(CAMPUS_CENTER, 17);
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-  // Clean OpenStreetMap Tiles
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  // Standard OpenStreetMap Tiles (100% Free, No API Key Required)
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(map);
 
-  // Safe Public Campus Zone Polygon
+  // Safe Public Campus Zone Polygon (Boundary)
   L.polygon(CAMPUS_PERIMETER, {
     color: '#4f46e5',
     weight: 2,
     dashArray: '6, 6',
     fillColor: '#6366f1',
-    fillOpacity: 0.05
-  }).addTo(map);
+    fillOpacity: 0.08
+  }).addTo(map).bindTooltip("🎓 Safe Public Campus Perimeter", { sticky: true });
+
+  // Styled Campus Landmark Footprints
+  const landmarks = [
+    {
+      name: "📚 Central Library",
+      coords: [[12.9346, 77.5346], [12.9350, 77.5346], [12.9350, 77.5350], [12.9346, 77.5350]],
+      color: '#3b82f6'
+    },
+    {
+      name: "☕ Cafeteria & Food Court",
+      coords: [[12.9339, 77.5350], [12.9343, 77.5350], [12.9343, 77.5354], [12.9339, 77.5354]],
+      color: '#f59e0b'
+    },
+    {
+      name: "🥏 Sports Ground / Turf",
+      coords: [[12.9335, 77.5338], [12.9340, 77.5338], [12.9340, 77.5343], [12.9335, 77.5343]],
+      color: '#10b981'
+    },
+    {
+      name: "🚀 Tech Park Atrium",
+      coords: [[12.9350, 77.5354], [12.9354, 77.5354], [12.9354, 77.5358], [12.9350, 77.5358]],
+      color: '#8b5cf6'
+    }
+  ];
+
+  landmarks.forEach(lm => {
+    L.polygon(lm.coords, {
+      color: lm.color,
+      weight: 1.5,
+      fillColor: lm.color,
+      fillOpacity: 0.25
+    }).addTo(map).bindTooltip(lm.name, { permanent: false, direction: 'top' });
+  });
 
   markersLayer = L.layerGroup().addTo(map);
   avatarsLayer = L.layerGroup().addTo(map);
 
   renderMapMarkers();
+
+  // Invalidate map size so tiles calculate container dimensions cleanly
+  setTimeout(() => {
+    map.invalidateSize();
+  }, 250);
+  window.addEventListener('resize', () => {
+    map.invalidateSize();
+  });
 }
 
 // --- Render Map Markers ---
@@ -168,6 +211,7 @@ function renderMapMarkers() {
     const iconHtml = `
       <div class="custom-quest-marker ${isSelected ? 'ring-4 ring-brand-500 scale-110' : ''} quest-pulse-beacon">
         ${quest.hostAvatar || '📍'}
+        <span class="marker-label">${quest.title.split(' ')[0]} ${quest.title.split(' ')[1] || ''}</span>
       </div>
     `;
 
