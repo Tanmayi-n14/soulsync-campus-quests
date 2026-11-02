@@ -423,8 +423,7 @@ function handleRiddleSubmit() {
 // --- "The Reveal" Trigger (Proximity Simulation) ---
 function triggerTheReveal() {
   if (!selectedQuest) {
-    alert("Please select a quest first from the list!");
-    return;
+    selectedQuest = quests[0]; // Auto-select first active quest as default
   }
 
   // Populate Reveal Modal
@@ -433,6 +432,8 @@ function triggerTheReveal() {
   document.getElementById('reveal-physical-clue').textContent = `"${selectedQuest.physicalClue}"`;
   document.getElementById('reveal-icebreaker').textContent = `"${selectedQuest.secretIcebreaker}"`;
 
+  // Close other modals and show reveal modal
+  document.getElementById('riddle-modal').classList.add('hidden');
   document.getElementById('reveal-modal').classList.remove('hidden');
 
   // Trigger celebratory confetti
@@ -617,6 +618,19 @@ function setupEventListeners() {
 
   document.getElementById('simulate-proximity-btn').addEventListener('click', triggerTheReveal);
   document.getElementById('claim-meetup-btn').addEventListener('click', claimMeetupReward);
+  document.getElementById('close-reveal-modal-btn').addEventListener('click', () => {
+    document.getElementById('reveal-modal').classList.add('hidden');
+  });
+
+  // Click backdrop outside modal box to close
+  ['riddle-modal', 'reveal-modal', 'host-modal', 'profile-modal'].forEach(modalId => {
+    const modalEl = document.getElementById(modalId);
+    if (modalEl) {
+      modalEl.addEventListener('click', (e) => {
+        if (e.target === modalEl) modalEl.classList.add('hidden');
+      });
+    }
+  });
 
   // Host a Quest
   document.getElementById('open-host-modal-btn').addEventListener('click', () => {
