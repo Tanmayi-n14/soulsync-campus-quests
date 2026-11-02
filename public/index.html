@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoulSync — Adventure Over Algorithm</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Canvas Confetti for The Reveal Celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shadow-sm z-30">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+        <i class="fa-solid fa-compass text-xl animate-spin-slow"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-xl font-black tracking-tight text-slate-900">SoulSync</h1>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+            <i class="fa-solid fa-shield-check mr-1"></i>Campus Verified
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 font-medium">Adventure Over Algorithm • Gamified Campus Connections</p>
+      </div>
+    </div>
+
+    <!-- User Status & Action Buttons -->
+    <div class="flex items-center space-x-3">
+      <!-- XP & Streak Status -->
+      <div class="hidden sm:flex items-center space-x-4 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 cursor-pointer hover:bg-slate-100 transition" id="profile-pill-btn">
+        <div class="flex items-center space-x-1.5 text-amber-600 font-bold text-sm">
+          <span>🔥</span>
+          <span id="nav-streak">4d</span>
+        </div>
+        <div class="h-4 w-px bg-slate-200"></div>
+        <div>
+          <div class="flex items-center justify-between text-xs text-slate-600 font-semibold mb-1">
+            <span id="nav-level-title">Lvl 2 Pathfinder</span>
+            <span id="nav-xp-counter" class="text-brand-600 font-bold ml-2">380/500 XP</span>
+          </div>
+          <div class="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div id="nav-xp-bar" class="h-full bg-gradient-to-r from-brand-500 to-emerald-400 rounded-full" style="width: 76%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Host a Quest Button -->
+      <button id="open-host-modal-btn" class="flex items-center space-x-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-4 py-2 rounded-xl shadow-sm transition hover:shadow-md">
+        <i class="fa-solid fa-plus"></i>
+        <span>Host a Quest</span>
+      </button>
+
+      <!-- Profile Avatar Button -->
+      <button id="open-profile-btn" class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-300 hover:border-brand-500 flex items-center justify-center text-lg transition">
+        👩‍💻
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Area (Sidebar + Leaflet Map) -->
+  <main class="flex-1 flex overflow-hidden relative">
+
+    <!-- Left Sidebar: Active Quests Feed -->
+    <aside class="w-full md:w-96 bg-white border-r border-slate-200 flex flex-col z-20 shadow-lg md:shadow-none transition-all">
+      <!-- Search & Filters -->
+      <div class="p-4 border-b border-slate-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center">
+            <i class="fa-solid fa-radar mr-2 text-brand-600"></i>Active Quests Nearby
+          </h2>
+          <span id="active-quests-count" class="text-xs bg-brand-100 text-brand-700 font-bold px-2 py-0.5 rounded-full">4 live</span>
+        </div>
+
+        <!-- Filter Chips -->
+        <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs">
+          <button data-filter="all" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-900 text-white font-medium shadow-sm transition">All</button>
+          <button data-filter="study" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium transition">📚 Study</button>
+          <button data-filter="social" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium transition">☕ Social</button>
+          <button data-filter="sports" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium transition">🥏 Sports</button>
+          <button data-filter="tech" class="filter-btn px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium transition">🚀 Tech</button>
+        </div>
+      </div>
+
+      <!-- Quests List Container -->
+      <div id="quests-list" class="flex-1 overflow-y-auto p-4 space-y-3.5 divide-y divide-transparent">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+      <!-- Sidebar Footer Safety Info -->
+      <div class="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex items-center justify-between">
+        <span class="flex items-center">
+          <i class="fa-solid fa-lock text-emerald-600 mr-1.5"></i>All meetups restricted to public campus zones
+        </span>
+        <button id="campus-view-btn" class="text-brand-600 font-bold hover:underline">Center Campus</button>
+      </div>
+    </aside>
+
+    <!-- Center/Right: Interactive Leaflet Map -->
+    <div class="flex-1 relative bg-slate-200">
+      <div id="campus-map" class="w-full h-full"></div>
+
+      <!-- Floating Map Overlays & Simulation Controls -->
+      <div class="absolute top-4 right-4 z-[400] flex flex-col space-y-2">
+        <div class="bg-white/95 backdrop-blur-md border border-slate-200 rounded-xl p-3 shadow-md text-xs space-y-2 max-w-xs">
+          <div class="flex items-center justify-between font-bold text-slate-800">
+            <span class="flex items-center"><i class="fa-solid fa-location-dot text-rose-500 mr-1.5"></i>Simulated Location</span>
+            <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Inside Safe Perimeter</span>
+          </div>
+          <p class="text-slate-500 text-[11px]">Click any quest on the left to solve its riddle, then hit simulate proximity to test <b>"The Reveal"</b>.</p>
+          <button id="simulate-proximity-btn" class="w-full py-1.5 px-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg shadow-sm transition flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-person-walking-arrow-right"></i>
+            <span>Simulate Arrival at Selected Quest</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. Quest Detail & Riddle Solver Modal -->
+  <div id="riddle-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+      <div class="bg-gradient-to-r from-brand-600 to-indigo-600 p-5 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div id="modal-host-avatar" class="text-3xl bg-white/20 p-2 rounded-xl">👩‍💻</div>
+          <div>
+            <span id="modal-category-tag" class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">Study</span>
+            <h3 id="modal-quest-title" class="text-lg font-bold">Late Night DSA & Algorithmic Prep</h3>
+            <p id="modal-host-subtext" class="text-xs text-white/80">Hosted by Tanmayi • 3/5 Joined</p>
+          </div>
+        </div>
+        <button id="close-riddle-modal-btn" class="text-white/80 hover:text-white text-xl p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="p-6 space-y-5">
+        <!-- Riddle Section -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between text-amber-800 text-xs font-bold uppercase tracking-wider">
+            <span><i class="fa-solid fa-puzzle-piece mr-1.5"></i>The Campus Riddle</span>
+            <span id="modal-difficulty-badge" class="bg-amber-200 text-amber-900 px-2 py-0.5 rounded">Medium</span>
+          </div>
+          <p id="modal-riddle-text" class="text-slate-800 text-sm italic font-serif leading-relaxed">
+            "Where towers of quiet paper stand and knowledge sleeps on every shelf, find the corner room with glass walls where three whiteboards wait."
+          </p>
+        </div>
+
+        <!-- Hint Dropdown -->
+        <div>
+          <button id="toggle-hint-btn" class="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center">
+            <i class="fa-solid fa-lightbulb mr-1.5"></i>Need a hint? Click here
+          </button>
+          <p id="modal-hint-text" class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg mt-2 border border-slate-200 hidden"></p>
+        </div>
+
+        <!-- Riddle Answer Input -->
+        <div class="space-y-2" id="solver-input-section">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Decipher the Location / Destination:</label>
+          <div class="flex space-x-2">
+            <input type="text" id="riddle-answer-input" placeholder="e.g. library, cafeteria, sports turf..." class="flex-1 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <button id="submit-riddle-btn" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm px-5 py-2 rounded-xl transition">
+              Unlock
+            </button>
+          </div>
+          <p id="riddle-feedback-msg" class="text-xs font-medium hidden"></p>
+        </div>
+
+        <!-- Unlocked Destination Preview (Shown after solving) -->
+        <div id="unlocked-destination-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-sm space-y-2">
+          <div class="flex items-center font-bold">
+            <i class="fa-solid fa-circle-check text-emerald-600 text-lg mr-2"></i>
+            <span>Riddle Solved! Meetup Coordinate Unlocked:</span>
+          </div>
+          <p class="font-semibold text-slate-900" id="unlocked-landmark-name">Central Library Discussion Pod 3</p>
+          <p class="text-xs text-emerald-700">Walk towards the location on the map. When you are within 15 meters, <b>The Reveal</b> will unlock the host's identity and visual clue!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. "The Reveal" Modal (Confetti & Visual Clue) -->
+  <div id="reveal-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border-2 border-emerald-400 overflow-hidden transform transition-all text-center p-6 space-y-5">
+      <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 text-3xl flex items-center justify-center mx-auto shadow-inner">
+        🎉
+      </div>
+      <div>
+        <span class="text-xs font-bold tracking-widest text-emerald-600 uppercase">Proximity Verified • Geofence Reached</span>
+        <h3 class="text-2xl font-black text-slate-900 mt-1">The Reveal!</h3>
+        <p class="text-xs text-slate-500">You've arrived at the meetup spot. Here is how to find your host:</p>
+      </div>
+
+      <!-- Host Identity Card -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3 text-left">
+        <div class="flex items-center space-x-3">
+          <div id="reveal-host-avatar" class="text-4xl bg-white p-2 rounded-2xl shadow-sm border border-slate-200">👩‍💻</div>
+          <div>
+            <h4 id="reveal-host-name" class="font-black text-slate-900 text-base">Tanmayi</h4>
+            <span class="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">Host of this Quest</span>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-3 space-y-2">
+          <div class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
+            <i class="fa-solid fa-shirt mr-1.5 text-brand-500"></i>Physical Identification Cue:
+          </div>
+          <p id="reveal-physical-clue" class="text-sm text-slate-800 bg-white p-3 rounded-xl border border-slate-200 font-medium">
+            "Wearing a navy blue oversized hoodie, sitting near the corner glass with a silver laptop and a green hydro flask."
+          </p>
+        </div>
+
+        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs text-indigo-900 space-y-1">
+          <span class="font-bold flex items-center"><i class="fa-solid fa-handshake mr-1.5"></i>Secret Icebreaker:</span>
+          <p id="reveal-icebreaker" class="italic">"Say 'Adventure over Algorithm' to break the ice!"</p>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="claim-meetup-btn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/25 transition">
+        Confirm Meetup & Claim +100 XP! 🌟
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Host a Quest Modal -->
+  <div id="host-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all max-h-[90vh] flex flex-col">
+      <div class="bg-slate-900 p-5 text-white flex items-center justify-between">
+        <div>
+          <h3 class="text-lg font-bold">Host a New Campus Quest</h3>
+          <p class="text-xs text-slate-400">Create an active beacon for peers to solve and join</p>
+        </div>
+        <button id="close-host-modal-btn" class="text-slate-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <form id="host-quest-form" class="p-6 space-y-4 overflow-y-auto flex-1">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Quest Title</label>
+          <input type="text" id="new-quest-title" placeholder="e.g. Quick Badminton Match, Tea & Book Chat..." required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Category</label>
+            <select id="new-quest-category" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+              <option value="social">☕ Social & Hangout</option>
+              <option value="study">📚 Study & Exam Prep</option>
+              <option value="sports">🥏 Sports & Outdoor</option>
+              <option value="tech">🚀 Tech & Hackathon</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Party Size Limit</label>
+            <input type="number" id="new-quest-max" min="2" max="10" value="4" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Safe Public Campus Landmark</label>
+          <select id="new-quest-landmark" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+            <option value="Central Library Lawn" data-lat="12.9348" data-lng="77.5348">Central Library Discussion Courtyard</option>
+            <option value="Campus Cafeteria Courtyard" data-lat="12.9341" data-lng="77.5352">Campus Cafeteria Open Courtyard</option>
+            <option value="Quadrangle Green Turf" data-lat="12.9338" data-lng="77.5340">Campus Sports Turf / Quadrangle</option>
+            <option value="Tech Park Atrium" data-lat="12.9352" data-lng="77.5356">Tech Park Innovation Atrium</option>
+          </select>
+        </div>
+
+        <!-- AI Riddle Generator Button -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-slate-700 uppercase">Riddle / Location Clue</label>
+            <button type="button" id="auto-generate-riddle-btn" class="text-xs text-brand-600 font-bold hover:underline flex items-center">
+              <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Generate AI Riddle
+            </button>
+          </div>
+          <textarea id="new-quest-riddle" rows="2" placeholder="Write a fun clue to guide participants to this spot..." required class="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Accepted Answer (Keyword)</label>
+          <input type="text" id="new-quest-answer" placeholder="e.g. library, cafe, turf..." required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Your Physical Clue (for The Reveal)</label>
+          <input type="text" id="new-quest-physical" placeholder="e.g. Wearing maroon t-shirt, sitting near the water fountain" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm">
+        </div>
+
+        <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl transition shadow-md">
+          Launch Live Quest (+50 XP) 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Student Profile & Badges Modal -->
+  <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all p-6 space-y-5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-black text-slate-900">Student Adventurer Profile</h3>
+        <button id="close-profile-modal-btn" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Avatar & Credentials -->
+      <div class="flex items-center space-x-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+        <div class="text-4xl bg-white p-3 rounded-2xl shadow-sm border border-slate-200">👩‍💻</div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h4 class="font-bold text-slate-900 text-base" id="profile-name">Tanmayi N.</h4>
+            <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+          </div>
+          <p class="text-xs text-slate-500" id="profile-email">tanmayi@pes.edu</p>
+          <span class="inline-block mt-1 text-[11px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md" id="profile-rank">
+            Lvl 2 Campus Pathfinder
+          </span>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-3 gap-2.5 text-center">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span class="block text-lg font-black text-slate-900" id="stat-completed">7</span>
+          <span class="text-[10px] text-slate-500 font-semibold uppercase">Quests Met</span>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span class="block text-lg font-black text-slate-900" id="stat-riddles">9</span>
+          <span class="text-[10px] text-slate-500 font-semibold uppercase">Riddles Solved</span>
+        </div>
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <span class="block text-lg font-black text-slate-900" id="stat-hosted">3</span>
+          <span class="text-[10px] text-slate-500 font-semibold uppercase">Quests Hosted</span>
+        </div>
+      </div>
+
+      <!-- Unlocked Badges Gallery -->
+      <div class="space-y-2">
+        <h5 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-award mr-1.5 text-amber-500"></i>Unlocked Achievement Badges
+        </h5>
+        <div class="grid grid-cols-2 gap-2" id="badges-container">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Logic Script -->
+  <script src="app.js"></script>
+</body>
+</html>

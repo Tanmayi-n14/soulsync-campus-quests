@@ -1,0 +1,26 @@
+{
+  "name": "soulsync-campus-quests",
+  "version": "1.0.0",
+  "description": "SoulSync — Adventure Over Algorithm: A Gamified Solution to Student Disconnection",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/test_engine.js"
+  },
+  "keywords": [
+    "campus-quests",
+    "gamification",
+    "social-connection",
+    "geofencing",
+    "student-wellbeing"
+  ],
+  "authors": [
+    "Tanmayi Nagabhairava",
+    "Dharshini V."
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
