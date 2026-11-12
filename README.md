@@ -86,12 +86,8 @@ npm test
 
 ---
 
-## 👤 Author
+## 👥 Authors
 
 * **Tanmayi Nagabhairava** ([@Tanmayi-n14](https://github.com/Tanmayi-n14)) — `PES1UG24CS493`
+* **Dharshini V.** ([@DharshiniPES](https://github.com/DharshiniPES))
 * Department of Computer Science & Engineering, PES University
-
----
-
-## 📜 License
-This project is licensed under the MIT License.
